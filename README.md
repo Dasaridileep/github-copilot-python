@@ -42,6 +42,37 @@ python app.py
 
 7. Open http://127.0.0.1:5000 in your browser.
 
+## Testing
+
+Baseline tests document current behavior of the Sudoku logic and Flask routes.
+
+### Run Tests (Windows)
+
+```cmd
+cd starter
+python -m pytest -q
+```
+
+### Run Tests with Verbose Output
+
+```cmd
+cd starter
+python -m pytest -v
+```
+
+### Run Tests with Coverage Report (Windows)
+
+```cmd
+cd starter
+python -m coverage run -m pytest && python -m coverage report -m
+```
+
+**Test Structure:**
+- `tests/test_sudoku_logic.py` — Unit tests for board creation, validation, and puzzle generation (22 tests)
+- `tests/test_app.py` — Integration tests for Flask routes (8 tests)
+
+All 30 baseline tests verify current application behavior and serve as regression tests.
+
 ## Project Instructions
 
 Use GitHub Copilot to refactor the code for this game to add more advanced features. The goal is to create a more modern and maintainable codebase and add additional functionality to the final product. You can use any combination of code completion and chat features, like Ask, Edit, or Agent modes.
