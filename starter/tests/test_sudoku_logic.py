@@ -1,8 +1,4 @@
-"""Baseline tests for sudoku_logic module.
-
-These tests document the actual public API and the uniqueness guarantee for
-Sudoku generation.
-"""
+"""Tests for Sudoku validation, solving, and unique puzzle generation."""
 
 import pytest
 
@@ -55,6 +51,13 @@ def _conflicting_board():
     board = create_empty_board()
     board[0][0] = 5
     board[0][1] = 5
+    return board
+
+
+def _invalid_board():
+    board = create_empty_board()
+    board[0][0] = 1
+    board[0][1] = 1
     return board
 
 
@@ -124,9 +127,9 @@ class TestCountSolutions:
         board = _board_with_multiple_solutions()
         assert count_solutions(board, max_count=2) == 2
 
-    def test_conflicting_board_returns_zero(self):
-        board = _conflicting_board()
-        assert count_solutions(board) == 0
+    def test_invalid_board_returns_zero(self):
+        assert count_solutions(_invalid_board()) == 0
+        assert count_solutions(_conflicting_board()) == 0
 
     def test_completed_board_returns_one(self):
         board = _completed_board()
@@ -140,6 +143,17 @@ class TestCountSolutions:
 
 
 class TestGeneratePuzzle:
+    def test_generate_puzzle_returns_tuple_and_matches_solution(self):
+        puzzle, solution = generate_puzzle(45)
+        assert isinstance((puzzle, solution), tuple)
+        assert count_solutions(puzzle, max_count=2) == 1
+        for row in range(9):
+            for col in range(9):
+                if puzzle[row][col] != 0:
+                    assert puzzle[row][col] == solution[row][col]
+                else:
+                    assert solution[row][col] != 0
+
     def test_generate_puzzle_easy_medium_hard_targets(self):
         for clues in [45, 38, 32]:
             puzzle, solution = generate_puzzle(clues)
@@ -149,8 +163,6 @@ class TestGeneratePuzzle:
                 for col in range(9):
                     if puzzle[row][col] != 0:
                         assert puzzle[row][col] == solution[row][col]
-                    else:
-                        assert solution[row][col] != 0
 
     def test_generate_puzzle_invalid_clue_count_raises(self):
         with pytest.raises(ValueError):

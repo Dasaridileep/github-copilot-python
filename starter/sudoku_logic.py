@@ -13,6 +13,11 @@ def create_empty_board():
     return [[EMPTY for _ in range(SIZE)] for _ in range(SIZE)]
 
 
+def validate_board(board):
+    """Return True when a board is a valid 9x9 Sudoku layout."""
+    return _validate_board(board)
+
+
 def is_safe(board, row, col, num):
     if num < 1 or num > SIZE:
         return False
@@ -37,7 +42,9 @@ def _validate_board(board):
         if not isinstance(row, list) or len(row) != SIZE:
             return False
         for value in row:
-            if not isinstance(value, int) or value < EMPTY or value > SIZE:
+            if isinstance(value, bool) or not isinstance(value, int):
+                return False
+            if value < EMPTY or value > SIZE:
                 return False
 
     for row in board:
@@ -91,25 +98,23 @@ def fill_board(board):
 
 
 def count_solutions(board, max_count=2):
-    """Count the number of valid solutions for a Sudoku board.
-
-    The function never mutates the caller's board and stops counting once
-    max_count solutions have been found.
-    """
+    """Count valid Sudoku solutions without mutating the input board."""
     if not isinstance(max_count, int) or max_count < 1:
         raise ValueError("max_count must be a positive integer.")
-    if not _validate_board(board):
+    if not validate_board(board):
         return 0
 
     working = deep_copy(board)
-    total_solutions = [0]
+    solution_count = 0
 
     def backtrack():
-        if total_solutions[0] >= max_count:
+        nonlocal solution_count
+        if solution_count >= max_count:
             return
 
-        next_cell = None
-        next_candidates = None
+        best_row = None
+        best_col = None
+        best_candidates = None
 
         for row in range(SIZE):
             for col in range(SIZE):
@@ -118,34 +123,34 @@ def count_solutions(board, max_count=2):
                 candidates = [
                     num for num in range(1, SIZE + 1) if is_safe(working, row, col, num)
                 ]
-                if next_candidates is None or len(candidates) < len(next_candidates):
-                    next_cell = (row, col)
-                    next_candidates = candidates
-                    if not next_candidates:
-                        return
+                if not candidates:
+                    return
+                if best_candidates is None or len(candidates) < len(best_candidates):
+                    best_row = row
+                    best_col = col
+                    best_candidates = candidates
+                    if len(best_candidates) == 1:
+                        break
+            if best_candidates is not None and len(best_candidates) == 1:
+                break
 
-        if next_cell is None:
-            total_solutions[0] += 1
+        if best_candidates is None:
+            solution_count += 1
             return
 
-        row, col = next_cell
-        for num in next_candidates:
-            working[row][col] = num
+        for num in best_candidates:
+            working[best_row][best_col] = num
             backtrack()
-            working[row][col] = EMPTY
-            if total_solutions[0] >= max_count:
+            working[best_row][best_col] = EMPTY
+            if solution_count >= max_count:
                 return
 
     backtrack()
-    return total_solutions[0]
+    return solution_count
 
 
 def remove_cells(board, clues, max_attempts=None):
-    """Remove cells while preserving exactly one solution.
-
-    Raises ValueError if the requested clue count cannot be reached while keeping
-    a unique solution.
-    """
+    """Remove cells only when the puzzle still has exactly one solution."""
     if not isinstance(clues, int) or not 17 <= clues <= SIZE * SIZE:
         raise ValueError(
             f"clues must be an integer between 17 and {SIZE * SIZE}, got {clues}."
@@ -155,7 +160,12 @@ def remove_cells(board, clues, max_attempts=None):
         max_attempts = max(1, (SIZE * SIZE - clues) * 10)
 
     puzzle = deep_copy(board)
-    current_clues = SIZE * SIZE
+    current_clues = sum(1 for row in puzzle for cell in row if cell != EMPTY)
+    if current_clues < clues:
+        raise ValueError(
+            f"Board has {current_clues} clues, which is fewer than the requested {clues}."
+        )
+
     attempts = 0
     cells = [(row, col) for row in range(SIZE) for col in range(SIZE)]
     random.shuffle(cells)
@@ -187,11 +197,7 @@ def remove_cells(board, clues, max_attempts=None):
 
 
 def generate_puzzle(clues=35, max_retries=8):
-    """Generate a Sudoku puzzle with exactly one valid solution.
-
-    Returns a tuple of (puzzle, solution). The puzzle always has exactly one
-    solution, and every non-empty clue matches the returned solution.
-    """
+    """Generate a new unique Sudoku puzzle and its solution as a tuple."""
     if not isinstance(clues, int) or not 17 <= clues <= SIZE * SIZE:
         raise ValueError(
             f"clues must be an integer between 17 and {SIZE * SIZE}, got {clues}."
@@ -210,6 +216,12 @@ def generate_puzzle(clues=35, max_retries=8):
             puzzle = remove_cells(board, clues)
         except ValueError as exc:
             last_error = exc
+            continue
+
+        if sum(1 for row in puzzle for cell in row if cell != EMPTY) != clues:
+            last_error = ValueError(
+                f"Generated puzzle does not have exactly {clues} clues."
+            )
             continue
 
         if count_solutions(puzzle, max_count=2) != 1:
