@@ -32,13 +32,13 @@
       <label><input type="radio" name="difficulty" value="hard"> Hard (32 clues)</label>
     </div>
     
-    <div id="sudoku-board"></div>
+    <div id="sudoku-board" role="grid" aria-label="Sudoku board"></div>
     
-    <div class="controls">
-      <button id="new-game">New Game</button>
-      <button id="hint-button">Hint</button>
-      <button id="check-solution">Check Solution</button>
-      <span id="message"></span>
+    <div class="controls" aria-label="Game controls">
+      <button id="new-game" aria-label="Start a new Sudoku game">New Game</button>
+      <button id="hint-button" aria-label="Request a hint for an empty cell">Hint</button>
+      <button id="check-solution" aria-label="Check the current Sudoku solution">Check Solution</button>
+      <span id="message" aria-live="polite" aria-atomic="true"></span>
     </div>
     
     <div class="player-section">

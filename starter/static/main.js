@@ -97,6 +97,12 @@ function formatTime(seconds) {
 // BOARD RENDERING
 // ============================================================================
 
+function getBlockToneClass(rowIndex, columnIndex) {
+    const blockRow = Math.floor(rowIndex / 3);
+    const blockCol = Math.floor(columnIndex / 3);
+    return (blockRow + blockCol) % 2 === 0 ? 'block-even' : 'block-odd';
+}
+
 function createBoardElement() {
     const boardDiv = document.getElementById('sudoku-board');
     boardDiv.innerHTML = '';
@@ -105,14 +111,21 @@ function createBoardElement() {
         rowDiv.className = 'sudoku-row';
         for (let j = 0; j < SIZE; j++) {
             const input = document.createElement('input');
+            const blockClass = getBlockToneClass(i, j);
             input.type = 'text';
             input.maxLength = 1;
-            input.className = 'sudoku-cell';
-            input.dataset.row = i;
-            input.dataset.col = j;
+            input.className = `sudoku-cell ${blockClass}`;
+            input.dataset.row = String(i);
+            input.dataset.col = String(j);
+            input.dataset.blockRow = String(Math.floor(i / 3));
+            input.dataset.blockColumn = String(Math.floor(j / 3));
+            input.setAttribute('aria-label', `Row ${i + 1}, column ${j + 1}, editable cell`);
             input.addEventListener('input', (e) => {
                 const val = e.target.value.replace(/[^1-9]/g, '');
                 e.target.value = val;
+                const row = Number(e.target.dataset.row);
+                const col = Number(e.target.dataset.col);
+                e.target.setAttribute('aria-label', `Row ${row + 1}, column ${col + 1}${val ? `, value ${val}` : ', empty cell'}`);
                 updateConflicts();
             });
             rowDiv.appendChild(input);
@@ -132,14 +145,21 @@ function renderPuzzle(puz) {
             const idx = i * SIZE + j;
             const val = puzzle[i][j];
             const inp = inputs[idx];
+            const blockClass = getBlockToneClass(i, j);
+            inp.className = `sudoku-cell ${blockClass}`;
+            inp.dataset.row = String(i);
+            inp.dataset.col = String(j);
+            inp.dataset.blockRow = String(Math.floor(i / 3));
+            inp.dataset.blockColumn = String(Math.floor(j / 3));
             if (val !== 0) {
                 inp.value = val;
                 inp.disabled = true;
-                inp.className = 'sudoku-cell prefilled';
+                inp.classList.add('prefilled');
+                inp.setAttribute('aria-label', `Row ${i + 1}, column ${j + 1}, fixed value ${val}`);
             } else {
                 inp.value = '';
                 inp.disabled = false;
-                inp.className = 'sudoku-cell';
+                inp.setAttribute('aria-label', `Row ${i + 1}, column ${j + 1}, editable empty cell`);
             }
         }
     }
